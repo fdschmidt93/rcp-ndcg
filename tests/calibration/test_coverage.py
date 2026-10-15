@@ -8,7 +8,6 @@ tests invalidate some of them.
 from __future__ import annotations
 
 import json
-import math
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
@@ -173,17 +172,15 @@ def test_a_document_with_only_invalid_tournament_windows_is_listed_and_warned(tm
     (warning,) = [w.message for w in caught if isinstance(w.message, RcpNdcgWarning)]
     assert warning.code == "NO_VALID_TOURNAMENT_EVIDENCE"
     assert "1 document has no comparison in a valid tournament window" in warning.message
-    assert "the query's mean ability" in warning.message
+    assert "the Bradley-Terry fit gives it no ability" in warning.message
     assert fitted.coverage.no_tournament_evidence_documents == ["d||q/x"]
     assert [w["code"] for w in fitted.warnings] == ["NO_VALID_TOURNAMENT_EVIDENCE"]
     loaded = Calibration.load(fitted.save(tmp_path / "cal"))
     assert loaded.coverage.no_tournament_evidence_documents == ["d||q/x"]
     assert loaded.warnings == fitted.warnings
-    # The paper's numbers are kept: the document gets the query mean ability and the ridge's SE, not a refusal.
-    row = next(row for row in fitted.thetas if row.doc_id == "x")
-    assert row.source == "fit"
-    assert row.theta == pytest.approx(fitted.queries["d||q"].alpha, abs=1e-4)
-    assert row.theta_se == pytest.approx(fitted.queries["d||q"].tau / math.sqrt(fitted.identity.priors.bt_l2), rel=1e-6)
+    # No comparison backs a prior: the document gets no ability (no theta row), never the query's mean ability.
+    assert [row for row in fitted.thetas if row.doc_id == "x"] == []
+    assert {row.doc_id for row in fitted.thetas} >= {"a", "b"}
 
 
 def test_a_strict_fit_refuses_a_document_without_valid_tournament_evidence() -> None:

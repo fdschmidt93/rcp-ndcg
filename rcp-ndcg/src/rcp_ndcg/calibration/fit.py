@@ -539,9 +539,9 @@ def calibrate(
     flags are an ``INVALID_WINDOWS`` warning (a :class:`~rcp_ndcg.errors.RcpNdcgWarning`, also kept in the
     calibration's ``diagnostics`` and ``coverage``), or with ``strict`` a refusal.
 
-    A document whose tournament windows are all invalid carries no comparison: the Bradley-Terry fit gives it the
-    query's mean ability (the paper's number; the ridge's standard error only when the query has other
-    comparisons), and the fit reports the documents as ``NO_VALID_TOURNAMENT_EVIDENCE``
+    A document whose tournament windows are all invalid carries no comparison: the Bradley-Terry fit gives it no
+    ability (its prior is no judgement), so it is not calibrated (``coverage.uncalibrated_documents`` when it has
+    rubric verdicts), and the fit reports the documents as ``NO_VALID_TOURNAMENT_EVIDENCE``
     (``coverage.no_tournament_evidence_documents``), or refuses them with ``strict``.
 
     Args:
@@ -640,8 +640,9 @@ def calibrate(
             count = len(no_evidence)
             message = (
                 f"{count} {'document has' if count == 1 else 'documents have'} no comparison in a valid "
-                f"tournament window: the Bradley-Terry fit gives {'it' if count == 1 else 'them'} the query's "
-                f"mean ability, which no comparison backs: {', '.join(no_evidence[:5])}" + (" ..." if count > 5 else "")
+                f"tournament window: the Bradley-Terry fit gives {'it' if count == 1 else 'them'} no ability, "
+                f"so {'it is' if count == 1 else 'they are'} not calibrated: {', '.join(no_evidence[:5])}"
+                + (" ..." if count > 5 else "")
             )
             if strict:
                 raise DataError(
